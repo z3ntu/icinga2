@@ -92,11 +92,12 @@ void HttpServerConnection::Disconnect()
 
 			m_CheckLivenessTimer.cancel();
 
-			m_Stream->lowest_layer().cancel(ec);
+			auto& lowestLayer = m_Stream->lowest_layer();
+			lowestLayer.cancel(ec);
 
 			m_Stream->next_layer().async_shutdown(yc[ec]);
 
-			m_Stream->lowest_layer().shutdown(m_Stream->lowest_layer().shutdown_both, ec);
+			lowestLayer.shutdown(lowestLayer.shutdown_both, ec);
 
 			auto listener (ApiListener::GetInstance());
 
@@ -239,8 +240,6 @@ bool HandleAccessControl(
 		auto headerAllowOrigin (listener->GetAccessControlAllowOrigin());
 
 		if (headerAllowOrigin) {
-			CpuBoundWork allowOriginHeader (yc);
-
 			auto allowedOrigins (headerAllowOrigin->ToSet<String>());
 
 			if (!allowedOrigins.empty()) {
@@ -249,8 +248,6 @@ bool HandleAccessControl(
 				if (allowedOrigins.find(std::string(origin)) != allowedOrigins.end()) {
 					response.set(http::field::access_control_allow_origin, origin);
 				}
-
-				allowOriginHeader.Done();
 
 				response.set(http::field::access_control_allow_credentials, "true");
 

@@ -226,7 +226,8 @@ void JsonRpcConnection::Disconnect()
 			m_CheckLivenessTimer.cancel();
 			m_HeartbeatTimer.cancel();
 
-			m_Stream->lowest_layer().cancel(ec);
+			auto& lowestLayer = m_Stream->lowest_layer();
+			lowestLayer.cancel(ec);
 
 			Timeout::Ptr shutdownTimeout (new Timeout(
 				m_IoStrand.context(),
@@ -242,7 +243,7 @@ void JsonRpcConnection::Disconnect()
 
 			shutdownTimeout->Cancel();
 
-			m_Stream->lowest_layer().shutdown(m_Stream->lowest_layer().shutdown_both, ec);
+			lowestLayer.shutdown(lowestLayer.shutdown_both, ec);
 		}
 	});
 }
