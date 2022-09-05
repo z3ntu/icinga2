@@ -126,7 +126,7 @@ void IcingaDB::ConfigStaticInitialize()
 		IcingaDB::NewCheckResultHandler(checkable);
 	});
 
-	Checkable::OnNextCheckChanged.connect([](const Checkable::Ptr& checkable, const Value&) {
+	Checkable::OnNextCheckUpdated.connect([](const Checkable::Ptr& checkable) {
 		IcingaDB::NextCheckChangedHandler(checkable);
 	});
 
