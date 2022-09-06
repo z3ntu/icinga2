@@ -4,24 +4,18 @@
 #include "base/array.hpp"
 #include "base/convert.hpp"
 #include "base/defer.hpp"
-#include "base/exception.hpp"
 #include "base/io-engine.hpp"
 #include "base/logger.hpp"
-#include "base/objectlock.hpp"
 #include "base/string.hpp"
-#include "base/tcpsocket.hpp"
 #include "base/tlsutility.hpp"
 #include "base/utility.hpp"
 #include <boost/asio.hpp>
 #include <boost/coroutine/exceptions.hpp>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/utility/string_view.hpp>
-#include <boost/variant/get.hpp>
 #include <exception>
 #include <future>
-#include <iterator>
 #include <memory>
-#include <openssl/ssl.h>
 #include <openssl/x509_vfy.h>
 #include <utility>
 
@@ -89,7 +83,10 @@ void RedisConnection::Disconnect()
 
 	IoEngine::SpawnCoroutine(m_Strand, [this, keepAlive](asio::yield_context yc) {
 		if (m_Connecting.exchange(false)) {
-			Log(LogInformation, "IcingaDB") << "Redis client " << (!m_Name.IsEmpty() ? m_Name : "") << " disconnected.";
+			m_Connected.store(false);
+
+			Log(m_Parent ? LogNotice : LogInformation, "IcingaDB")
+				<< "Redis client " << (!m_Name.IsEmpty() ? m_Name : "") << " disconnected.";
 
 			boost::system::error_code ec;
 
@@ -342,6 +339,8 @@ void RedisConnection::Connect(asio::yield_context& yc)
 
 	for (;;) {
 		try {
+			using boost::asio::ip::tcp;
+
 			if (m_Path.IsEmpty()) {
 				if (m_TLSContext) {
 					Log(m_Parent ? LogNotice : LogInformation, "IcingaDB")
@@ -352,8 +351,10 @@ void RedisConnection::Connect(asio::yield_context& yc)
 					auto connectTimeout (MakeTimeout(conn));
 					Defer cancelTimeout ([&connectTimeout]() { connectTimeout->Cancel(); });
 
-					icinga::Connect(conn->lowest_layer(), m_Host, Convert::ToString(m_Port), yc);
-					tlsConn.async_handshake(tlsConn.client, yc);
+					tcp::resolver resolver (m_Strand.context());
+					tcp::resolver::query query (m_Host, Convert::ToString(m_Port));
+
+					boost::asio::connect(conn->lowest_layer(), resolver.async_resolve(query, yc));
 
 					if (!m_Insecure) {
 						std::shared_ptr<X509> cert (tlsConn.GetPeerCertificate());
@@ -382,7 +383,10 @@ void RedisConnection::Connect(asio::yield_context& yc)
 					auto connectTimeout (MakeTimeout(conn));
 					Defer cancelTimeout ([&connectTimeout]() { connectTimeout->Cancel(); });
 
-					icinga::Connect(conn->next_layer(), m_Host, Convert::ToString(m_Port), yc);
+					tcp::resolver resolver (m_Strand.context());
+					tcp::resolver::query query (m_Host, Convert::ToString(m_Port));
+
+					boost::asio::connect(conn->lowest_layer(), resolver.async_resolve(query, yc));
 					Handshake(conn, yc);
 					waitForReadLoop();
 					m_TcpConn = std::move(conn);
@@ -549,7 +553,9 @@ void RedisConnection::LogStats(asio::yield_context& yc)
 
 	for (;;) {
 		m_LogStatsTimer.async_wait(yc);
-		m_LogStatsTimer.expires_from_now(boost::posix_time::seconds(10));
+		Defer rescheduleTimer ([this]() {
+			m_LogStatsTimer.expires_from_now(boost::posix_time::seconds(10));
+		});
 
 		if (!IsConnected())
 			continue;

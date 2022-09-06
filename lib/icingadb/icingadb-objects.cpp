@@ -15,9 +15,7 @@
 #include "base/array.hpp"
 #include "base/exception.hpp"
 #include "base/utility.hpp"
-#include "base/object-packer.hpp"
 #include "icinga/command.hpp"
-#include "icinga/compatutility.hpp"
 #include "icinga/customvarobject.hpp"
 #include "icinga/host.hpp"
 #include "icinga/service.hpp"
@@ -34,10 +32,8 @@
 #include <cstdint>
 #include <iterator>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <set>
-#include <utility>
 #include <type_traits>
 
 using namespace icinga;
@@ -224,9 +220,9 @@ void IcingaDB::UpdateAllConfigObjects()
 			return;
 
 		auto& rcon (m_Rcons.at(ctype));
-		Defer disconnect ([&rcon]() {
-			rcon->Disconnect();
-		});
+//		Defer disconnect ([&rcon]() {
+//			rcon->Disconnect();
+//		});
 
 		std::vector<String> keys = GetTypeOverwriteKeys(lcType);
 		DeleteKeys(rcon, keys, Prio::Config);
@@ -2333,7 +2329,7 @@ void IcingaDB::ForwardHistoryEntries()
 
 	auto logPeriodically ([this, logInterval, &nextLog]() {
 		if (clock::now() > nextLog) {
-			nextLog += logInterval;
+			nextLog = clock::now() + logInterval;
 
 			auto size (m_HistoryBulker.Size());
 
@@ -2351,6 +2347,8 @@ void IcingaDB::ForwardHistoryEntries()
 			if (!GetActive()) {
 				break;
 			}
+
+			boost::this_thread::sleep(boost::posix_time::seconds(2));
 
 			continue;
 		}
