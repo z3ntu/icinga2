@@ -116,7 +116,7 @@ void IcingaDB::Start(bool runtimeCreated)
 	m_Rcon->Start();
 
 	m_StatsTimer = new Timer();
-	m_StatsTimer->SetInterval(1);
+	m_StatsTimer->SetInterval(10);
 	m_StatsTimer->OnTimerExpired.connect([this](const Timer * const&) { PublishStatsTimerHandler(); });
 	m_StatsTimer->Start();
 

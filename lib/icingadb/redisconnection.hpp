@@ -90,7 +90,10 @@ namespace icinga
 
 		void UpdateTLSContext();
 
+		void SetName(const String& name);
+
 		void Start();
+		void Disconnect();
 
 		bool IsConnected();
 
@@ -223,6 +226,8 @@ namespace icinga
 
 		template<class StreamPtr>
 		Timeout::Ptr MakeTimeout(StreamPtr& stream);
+
+		String m_Name {};
 
 		String m_Path;
 		String m_Host;

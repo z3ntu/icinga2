@@ -58,6 +58,11 @@ void RedisConnection::UpdateTLSContext()
 		m_CrlPath, m_CipherList, m_TlsProtocolmin, m_DebugInfo);
 }
 
+void RedisConnection::SetName(const String& name)
+{
+	m_Name = name;
+}
+
 void RedisConnection::Start()
 {
 	if (!m_Started.exchange(true)) {
@@ -76,6 +81,37 @@ void RedisConnection::Start()
 
 		IoEngine::SpawnCoroutine(m_Strand, [this, keepAlive](asio::yield_context yc) { Connect(yc); });
 	}
+}
+
+void RedisConnection::Disconnect()
+{
+	RedisConnection::Ptr keepAlive (this);
+
+	IoEngine::SpawnCoroutine(m_Strand, [this, keepAlive](asio::yield_context yc) {
+		if (m_Connecting.exchange(false)) {
+			Log(LogInformation, "IcingaDB") << "Redis client " << (!m_Name.IsEmpty() ? m_Name : "") << " disconnected.";
+
+			boost::system::error_code ec;
+
+			m_LogStatsTimer.cancel();
+
+			if (m_Path.IsEmpty()) {
+				auto& socket = m_TLSContext ? m_TlsConn->lowest_layer() : m_TcpConn->lowest_layer();
+				socket.cancel(ec);
+
+				if (m_TLSContext) {
+					m_TlsConn->next_layer().async_shutdown(yc[ec]);
+				}
+
+				socket.shutdown(socket.shutdown_both, ec);
+			} else {
+				auto& socket = m_UnixConn->lowest_layer();
+
+				socket.cancel(ec);
+				socket.shutdown(socket.shutdown_both, ec);
+			}
+		}
+	});
 }
 
 bool RedisConnection::IsConnected() {

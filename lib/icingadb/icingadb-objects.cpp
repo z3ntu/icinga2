@@ -126,8 +126,8 @@ void IcingaDB::ConfigStaticInitialize()
 		IcingaDB::NewCheckResultHandler(checkable);
 	});
 
-	Checkable::OnNextCheckChanged.connect([](const Checkable::Ptr& checkable, const Value&) {
-		IcingaDB::NextCheckChangedHandler(checkable);
+	Checkable::OnNextCheckUpdated.connect([](const Checkable::Ptr& checkable) {
+		IcingaDB::NextCheckUpdatedHandler(checkable);
 	});
 
 	Service::OnHostProblemChanged.connect([](const Service::Ptr& service, const CheckResult::Ptr&, const MessageOrigin::Ptr&) {
@@ -224,12 +224,17 @@ void IcingaDB::UpdateAllConfigObjects()
 			return;
 
 		auto& rcon (m_Rcons.at(ctype));
+		Defer disconnect ([&rcon]() {
+			rcon->Disconnect();
+		});
 
 		std::vector<String> keys = GetTypeOverwriteKeys(lcType);
 		DeleteKeys(rcon, keys, Prio::Config);
 
 		WorkQueue upqObjectType(25000, Configuration::Concurrency, LogNotice);
 		upqObjectType.SetName("IcingaDB:ConfigDump:" + lcType);
+
+		rcon->SetName("IcingaDB:ConfigDump:" + lcType);
 
 		std::map<String, String> redisCheckSums;
 		String configCheckSum = m_PrefixConfigCheckSum + lcType;
@@ -545,6 +550,8 @@ void IcingaDB::UpdateAllConfigObjects()
 
 	SetLastdumpTook(took);
 	SetLastdumpEnd(endTime);
+
+	m_Rcons.clear();
 
 	Log(LogInformation, "IcingaDB")
 		<< "Initial config/status dump finished in " << took << " seconds.";
@@ -2805,7 +2812,7 @@ void IcingaDB::NewCheckResultHandler(const Checkable::Ptr& checkable)
 	}
 }
 
-void IcingaDB::NextCheckChangedHandler(const Checkable::Ptr& checkable)
+void IcingaDB::NextCheckUpdatedHandler(const Checkable::Ptr& checkable)
 {
 	for (auto& rw : ConfigType::GetObjectsByType<IcingaDB>()) {
 		rw->UpdateState(checkable, StateUpdate::Volatile);
