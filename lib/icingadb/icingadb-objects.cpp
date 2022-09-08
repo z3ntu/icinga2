@@ -1690,6 +1690,8 @@ void IcingaDB::SendStateChange(const ConfigObject::Ptr& object, const CheckResul
 
 	if (cr) {
 		auto output (cr->GetOutput());
+		Utility::ValidateUTF8(output);
+
 		auto pos (output.Find("\n"));
 
 		if (pos != String::NPos) {
@@ -1697,11 +1699,11 @@ void IcingaDB::SendStateChange(const ConfigObject::Ptr& object, const CheckResul
 			output.erase(output.Begin() + pos, output.End());
 
 			xAdd.emplace_back("long_output");
-			xAdd.emplace_back(Utility::ValidateUTF8(std::move(longOutput)));
+			xAdd.emplace_back(longOutput);
 		}
 
 		xAdd.emplace_back("output");
-		xAdd.emplace_back(Utility::ValidateUTF8(std::move(output)));
+		xAdd.emplace_back(output);
 		xAdd.emplace_back("check_source");
 		xAdd.emplace_back(cr->GetCheckSource());
 		xAdd.emplace_back("scheduling_source");
@@ -1755,6 +1757,9 @@ void IcingaDB::SendSentNotification(
 
 	auto notificationHistoryId (HashValue(rawId));
 
+	Utility::ValidateUTF8(finalText);
+	Utility::ValidateUTF8(const_cast<String&>(author));
+
 	std::vector<String> xAdd ({
 		"XADD", "icinga:history:stream:notification", "*",
 		"id", notificationHistoryId,
@@ -1764,8 +1769,8 @@ void IcingaDB::SendSentNotification(
 		"type", Convert::ToString(type),
 		"state", Convert::ToString(cr ? service ? Convert::ToLong(cr->GetState()) : Convert::ToLong(Host::CalculateState(cr->GetState())) : 99),
 		"previous_hard_state", Convert::ToString(cr ? Convert::ToLong(service ? cr->GetPreviousHardState() : Host::CalculateState(cr->GetPreviousHardState())) : 99),
-		"author", Utility::ValidateUTF8(author),
-		"text", Utility::ValidateUTF8(finalText),
+		"author", author,
+		"text", finalText,
 		"users_notified", Convert::ToString(usersAmount),
 		"send_time", Convert::ToString(sendTs),
 		"event_id", CalcEventID("notification", notification, sendTime, type),
@@ -1825,8 +1830,8 @@ void IcingaDB::SendStartedDowntime(const Downtime::Ptr& downtime)
 		"environment_id", m_EnvironmentId,
 		"host_id", GetObjectIdentifier(host),
 		"entry_time", Convert::ToString(TimestampToMilliseconds(downtime->GetEntryTime())),
-		"author", Utility::ValidateUTF8(downtime->GetAuthor()),
-		"comment", Utility::ValidateUTF8(downtime->GetComment()),
+		"author", downtime->GetAuthor(),
+		"comment", downtime->GetComment(),
 		"is_flexible", Convert::ToString((unsigned short)!downtime->GetFixed()),
 		"flexible_duration", Convert::ToString(TimestampToMilliseconds(downtime->GetDuration())),
 		"scheduled_start_time", Convert::ToString(TimestampToMilliseconds(downtime->GetStartTime())),
@@ -1914,9 +1919,9 @@ void IcingaDB::SendRemovedDowntime(const Downtime::Ptr& downtime)
 		"environment_id", m_EnvironmentId,
 		"host_id", GetObjectIdentifier(host),
 		"entry_time", Convert::ToString(TimestampToMilliseconds(downtime->GetEntryTime())),
-		"author", Utility::ValidateUTF8(downtime->GetAuthor()),
-		"cancelled_by", Utility::ValidateUTF8(downtime->GetRemovedBy()),
-		"comment", Utility::ValidateUTF8(downtime->GetComment()),
+		"author", downtime->GetAuthor(),
+		"cancelled_by", downtime->GetRemovedBy(),
+		"comment", downtime->GetComment(),
 		"is_flexible", Convert::ToString((unsigned short)!downtime->GetFixed()),
 		"flexible_duration", Convert::ToString(TimestampToMilliseconds(downtime->GetDuration())),
 		"scheduled_start_time", Convert::ToString(TimestampToMilliseconds(downtime->GetStartTime())),
@@ -1996,8 +2001,8 @@ void IcingaDB::SendAddedComment(const Comment::Ptr& comment)
 		"environment_id", m_EnvironmentId,
 		"host_id", GetObjectIdentifier(host),
 		"entry_time", Convert::ToString(TimestampToMilliseconds(comment->GetEntryTime())),
-		"author", Utility::ValidateUTF8(comment->GetAuthor()),
-		"comment", Utility::ValidateUTF8(comment->GetText()),
+		"author", comment->GetAuthor(),
+		"comment", comment->GetText(),
 		"entry_type", Convert::ToString(comment->GetEntryType()),
 		"is_persistent", Convert::ToString((unsigned short)comment->GetPersistent()),
 		"is_sticky", Convert::ToString((unsigned short)comment->GetSticky()),
@@ -2068,8 +2073,8 @@ void IcingaDB::SendRemovedComment(const Comment::Ptr& comment)
 		"environment_id", m_EnvironmentId,
 		"host_id", GetObjectIdentifier(host),
 		"entry_time", Convert::ToString(TimestampToMilliseconds(comment->GetEntryTime())),
-		"author", Utility::ValidateUTF8(comment->GetAuthor()),
-		"comment", Utility::ValidateUTF8(comment->GetText()),
+		"author", comment->GetAuthor(),
+		"comment", comment->GetText(),
 		"entry_type", Convert::ToString(comment->GetEntryType()),
 		"is_persistent", Convert::ToString((unsigned short)comment->GetPersistent()),
 		"is_sticky", Convert::ToString((unsigned short)comment->GetSticky()),
@@ -2100,7 +2105,7 @@ void IcingaDB::SendRemovedComment(const Comment::Ptr& comment)
 		xAdd.emplace_back("has_been_removed");
 		xAdd.emplace_back("1");
 		xAdd.emplace_back("removed_by");
-		xAdd.emplace_back(Utility::ValidateUTF8(comment->GetRemovedBy()));
+		xAdd.emplace_back(comment->GetRemovedBy());
 	} else {
 		xAdd.emplace_back("has_been_removed");
 		xAdd.emplace_back("0");
