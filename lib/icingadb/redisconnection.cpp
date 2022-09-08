@@ -83,13 +83,13 @@ void RedisConnection::Disconnect()
 
 	IoEngine::SpawnCoroutine(m_Strand, [this, keepAlive](asio::yield_context yc) {
 		if (m_Connecting.exchange(false)) {
-			m_Connected.store(false);
-
 			Log(m_Parent ? LogNotice : LogInformation, "IcingaDB")
 				<< "Redis client " << (!m_Name.IsEmpty() ? m_Name : "") << " disconnected.";
 
 			boost::system::error_code ec;
 
+			m_QueuedReads.Clear();
+			m_QueuedWrites.Clear();
 			m_LogStatsTimer.cancel();
 
 			if (m_Path.IsEmpty()) {

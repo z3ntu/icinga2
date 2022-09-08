@@ -220,9 +220,9 @@ void IcingaDB::UpdateAllConfigObjects()
 			return;
 
 		auto& rcon (m_Rcons.at(ctype));
-//		Defer disconnect ([&rcon]() {
-//			rcon->Disconnect();
-//		});
+		Defer disconnect ([&rcon]() {
+			rcon->Disconnect();
+		});
 
 		std::vector<String> keys = GetTypeOverwriteKeys(lcType);
 		DeleteKeys(rcon, keys, Prio::Config);
