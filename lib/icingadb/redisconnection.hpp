@@ -91,6 +91,7 @@ namespace icinga
 		void UpdateTLSContext();
 
 		void Start();
+		void Disconnect();
 
 		bool IsConnected();
 
