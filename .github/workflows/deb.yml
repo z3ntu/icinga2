@@ -1,10 +1,7 @@
 name: .deb
 
 on:
-  push:
-    branches:
-      - master
-      - 'support/*'
+  push: {}
   pull_request: {}
 
 jobs:
