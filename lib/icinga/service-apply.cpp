@@ -16,12 +16,12 @@ INITIALIZE_ONCE([]() {
 	ApplyRule::RegisterType("Service", { "Host" });
 });
 
-bool Service::EvaluateApplyRuleInstance(const Host::Ptr& host, const String& name, ScriptFrame& frame, const ApplyRule& rule)
+bool Service::EvaluateApplyRuleInstance(const Host::Ptr& host, const String& name, ScriptFrame& frame, const ApplyRule& rule, bool skipFilter)
 {
-	if (!rule.EvaluateFilter(frame))
+	if (!skipFilter && !rule.EvaluateFilter(frame))
 		return false;
 
-	DebugInfo di = rule.GetDebugInfo();
+	auto& di (rule.GetDebugInfo());
 
 #ifdef _DEBUG
 	Log(LogDebug, "Service")
@@ -55,9 +55,9 @@ bool Service::EvaluateApplyRuleInstance(const Host::Ptr& host, const String& nam
 	return true;
 }
 
-bool Service::EvaluateApplyRule(const Host::Ptr& host, const ApplyRule& rule)
+bool Service::EvaluateApplyRule(const Host::Ptr& host, const ApplyRule& rule, bool skipFilter)
 {
-	DebugInfo di = rule.GetDebugInfo();
+	auto& di (rule.GetDebugInfo());
 
 	std::ostringstream msgbuf;
 	msgbuf << "Evaluating 'apply' rule (" << di << ")";
@@ -98,7 +98,7 @@ bool Service::EvaluateApplyRule(const Host::Ptr& host, const ApplyRule& rule)
 				name += instance;
 			}
 
-			if (EvaluateApplyRuleInstance(host, name, frame, rule))
+			if (EvaluateApplyRuleInstance(host, name, frame, rule, skipFilter))
 				match = true;
 		}
 	} else if (vinstances.IsObjectType<Dictionary>()) {
@@ -111,7 +111,7 @@ bool Service::EvaluateApplyRule(const Host::Ptr& host, const ApplyRule& rule)
 			frame.Locals->Set(rule.GetFKVar(), key);
 			frame.Locals->Set(rule.GetFVVar(), dict->Get(key));
 
-			if (EvaluateApplyRuleInstance(host, rule.GetName() + key, frame, rule))
+			if (EvaluateApplyRuleInstance(host, rule.GetName() + key, frame, rule, skipFilter))
 				match = true;
 		}
 	}
@@ -121,10 +121,15 @@ bool Service::EvaluateApplyRule(const Host::Ptr& host, const ApplyRule& rule)
 
 void Service::EvaluateApplyRules(const Host::Ptr& host)
 {
-	for (ApplyRule& rule : ApplyRule::GetRules("Service")) {
-		CONTEXT("Evaluating 'apply' rules for host '" + host->GetName() + "'");
+	CONTEXT("Evaluating 'apply' rules for host '" + host->GetName() + "'");
 
-		if (EvaluateApplyRule(host, rule))
-			rule.AddMatch();
+	for (auto& rule : ApplyRule::GetRules(Service::TypeInstance, Host::TypeInstance)) {
+		if (EvaluateApplyRule(host, *rule))
+			rule->AddMatch();
+	}
+
+	for (auto& rule : ApplyRule::GetTargetedHostRules(Service::TypeInstance, host->GetName())) {
+		if (EvaluateApplyRule(host, *rule, true))
+			rule->AddMatch();
 	}
 }
