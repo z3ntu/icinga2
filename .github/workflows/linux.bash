@@ -74,6 +74,7 @@ cd /icinga2/build
 
 cmake \
   -GNinja \
+  -DCMAKE_CXX_FLAGS='-Wall -Wextra' \
   -DCMAKE_BUILD_TYPE=Release \
   -DICINGA2_UNITY_BUILD=ON \
   -DUSE_SYSTEMD=ON \
