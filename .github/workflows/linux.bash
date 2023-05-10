@@ -4,7 +4,6 @@ set -exo pipefail
 export PATH="/usr/lib/ccache:/usr/lib64/ccache:/opt/rh/devtoolset-11/root/usr/bin:$PATH"
 export CCACHE_DIR=/icinga2/ccache
 export CTEST_OUTPUT_ON_FAILURE=1
-CMAKE_OPTS=''
 
 case "$DISTRO" in
   amazonlinux:*)
@@ -23,7 +22,7 @@ case "$DISTRO" in
     )
 
     ln -vs /usr/bin/ninja-build /usr/local/bin/ninja
-    CMAKE_OPTS='-DBOOST_INCLUDEDIR=/boost_1_69_0 -DBOOST_LIBRARYDIR=/boost_1_69_0/stage/lib'
+    CMAKE_OPTS="$CMAKE_OPTS -DBOOST_INCLUDEDIR=/boost_1_69_0 -DBOOST_LIBRARYDIR=/boost_1_69_0/stage/lib"
     export LD_LIBRARY_PATH=/boost_1_69_0/stage/lib
     ;;
 
@@ -33,7 +32,7 @@ case "$DISTRO" in
       {boost169,libedit,mariadb,ncurses,openssl,postgresql,systemd}-devel
 
     ln -vs /usr/bin/ccache /usr/lib64/ccache/g++
-    CMAKE_OPTS='-DBOOST_INCLUDEDIR=/usr/include/boost169 -DBOOST_LIBRARYDIR=/usr/lib64/boost169'
+    CMAKE_OPTS="$CMAKE_OPTS -DBOOST_INCLUDEDIR=/usr/include/boost169 -DBOOST_LIBRARYDIR=/usr/lib64/boost169"
     ;;
 
   debian:*|ubuntu:*)
