@@ -25,7 +25,6 @@
 #include <fstream>
 #include <thread>
 #ifdef __linux__
-#include <malloc.h>
 #include <sys/prctl.h>
 #endif /* __linux__ */
 #ifdef _WIN32
@@ -310,11 +309,6 @@ void Application::RunEventLoop()
 	double lastLoop = Utility::GetTime();
 
 	while (!m_ShuttingDown) {
-#ifdef __linux__
-		auto mi (mallinfo());
-		Log(LogInformation, "Application") << "Used/free malloc(3) memory: " << mi.uordblks << "/" << mi.fordblks;
-#endif /* __linux__ */
-
 		if (m_RequestRestart) {
 			m_RequestRestart = false;         // we are now handling the request, once is enough
 
