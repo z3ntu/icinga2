@@ -21,6 +21,11 @@
 #include "base/loader.hpp"
 #include <fstream>
 
+#ifdef __linux__
+#include <malloc.h>
+#include <stdio.h>
+#endif /* __linux__ */
+
 using namespace icinga;
 
 static Timer::Ptr l_RetentionTimer;
@@ -108,6 +113,20 @@ int IcingaApplication::Main()
 	l_RetentionTimer->SetInterval(300);
 	l_RetentionTimer->OnTimerExpired.connect([this](const Timer * const&) { DumpProgramState(); });
 	l_RetentionTimer->Start();
+
+#ifdef __linux__
+	static auto l_MallocInfoTimer = Timer::Create();
+	l_MallocInfoTimer->SetInterval(60);
+	l_MallocInfoTimer->OnTimerExpired.connect([this](const Timer * const&) {
+		char buf[1000000] = {0};
+		auto f = fmemopen(buf, sizeof(buf), "w");
+
+		malloc_info(0, f);
+		fclose(f);
+		Log(LogInformation, "IcingaApplication") << "malloc_info(3): " << buf;
+	});
+	l_MallocInfoTimer->Start();
+#endif /* __linux__ */
 
 	RunEventLoop();
 
