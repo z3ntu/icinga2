@@ -313,7 +313,6 @@ void Application::RunEventLoop()
 #ifdef __linux__
 		auto mi (mallinfo());
 		Log(LogInformation, "Application") << "Used/free malloc(3) memory: " << mi.uordblks << "/" << mi.fordblks;
-		malloc_stats();
 #endif /* __linux__ */
 
 		if (m_RequestRestart) {
