@@ -121,10 +121,12 @@ int IcingaApplication::Main()
 		char buf[1000000] = {0};
 		auto f = fmemopen(buf, sizeof(buf), "w");
 
-		malloc_info(0, f);
-		fclose(f);
-		buf[sizeof(buf)-1u] = 0;
-		Log(LogInformation, "IcingaApplication") << "malloc_info(3): " << buf;
+		if (f) {
+			malloc_info(0, f);
+			fclose(f);
+			buf[sizeof(buf)-1u] = 0;
+			Log(LogInformation, "IcingaApplication") << "malloc_info(3): " << buf;
+		}
 	});
 	l_MallocInfoTimer->Start();
 #endif /* __linux__ */
