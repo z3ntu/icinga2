@@ -123,6 +123,7 @@ int IcingaApplication::Main()
 
 		malloc_info(0, f);
 		fclose(f);
+		buf[sizeof(buf)-1u] = 0;
 		Log(LogInformation, "IcingaApplication") << "malloc_info(3): " << buf;
 	});
 	l_MallocInfoTimer->Start();
