@@ -118,7 +118,7 @@ int IcingaApplication::Main()
 	static auto l_MallocInfoTimer = Timer::Create();
 	l_MallocInfoTimer->SetInterval(60);
 	l_MallocInfoTimer->OnTimerExpired.connect([this](const Timer * const&) {
-		char buf[1000000] = {0};
+		char buf[100000] = {0};
 		auto f = fmemopen(buf, sizeof(buf), "w");
 
 		if (f) {
