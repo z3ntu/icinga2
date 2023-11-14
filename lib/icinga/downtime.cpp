@@ -430,6 +430,9 @@ std::set<Downtime::Ptr> Downtime::GetChildren() const
 
 bool Downtime::CanBeTriggered()
 {
+	if (!GetActive() || GetWasCancelled())
+		return false;
+
 	if (IsInEffect() && IsTriggered())
 		return false;
 
