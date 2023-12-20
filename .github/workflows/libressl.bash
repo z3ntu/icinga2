@@ -5,11 +5,6 @@ export PATH="/usr/lib/ccache:$PATH"
 export CCACHE_DIR="$(pwd)/ccache"
 export CTEST_OUTPUT_ON_FAILURE=1
 
-apt-get update
-
-DEBIAN_FRONTEND=noninteractive apt-get install --no-install-{recommends,suggests} -y \
-  bison ccache cmake flex g++ lib{boost-all,ssl}-dev ninja-build tzdata
-
 mkdir build
 cd build
 
