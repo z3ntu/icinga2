@@ -23,4 +23,4 @@ jobs:
           key: ccache/libressl
 
       - name: Build
-        run: .github/workflows/libressl.bash
+        run: sudo .github/workflows/libressl.bash
