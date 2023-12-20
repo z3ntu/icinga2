@@ -1,0 +1,30 @@
+name: LibreSSL
+
+on:
+  push:
+    branches:
+      - master
+      - 'support/*'
+  pull_request: {}
+
+concurrency:
+  group: libressl-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  libressl:
+    name: LibreSSL
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout HEAD
+        uses: actions/checkout@v3
+
+      - name: Restore/backup ccache
+        uses: actions/cache@v3
+        with:
+          path: ccache
+          key: ccache/libressl
+
+      - name: Build
+        run: .github/workflows/libressl.bash
