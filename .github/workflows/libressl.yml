@@ -26,7 +26,7 @@ jobs:
         run: sudo apt-get update
 
       - name: Install build dependencies
-        run: >
+        run: >-
           DEBIAN_FRONTEND=noninteractive sudo apt-get install -y
           --no-install-{recommends,suggests}
           bison ccache cmake flex g++ lib{boost-all,ssl}-dev ninja-build tzdata

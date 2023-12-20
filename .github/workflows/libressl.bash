@@ -1,14 +1,10 @@
 #!/bin/bash
 set -exo pipefail
 
-export PATH="/usr/lib/ccache:$PATH"
-export CCACHE_DIR="$(pwd)/ccache"
-export CTEST_OUTPUT_ON_FAILURE=1
-
 mkdir build
 cd build
 
-cmake \
+PATH="/usr/lib/ccache:$PATH" cmake \
   -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
   -DICINGA2_UNITY_BUILD=ON \
@@ -18,8 +14,8 @@ cmake \
   -DICINGA2_GROUP=$(id -gn) \
   ..
 
-ninja
-ninja test
+CCACHE_DIR="$(pwd)/ccache" ninja
+CTEST_OUTPUT_ON_FAILURE=1 ninja test
 ninja install
 
 icinga2 daemon -C
