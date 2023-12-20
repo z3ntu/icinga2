@@ -1,11 +1,7 @@
 name: LibreSSL
 
 on:
-  push:
-    branches:
-      - master
-      - 'support/*'
-  pull_request: {}
+  push: {}
 
 concurrency:
   group: libressl-${{ github.event_name == 'push' && github.sha || github.ref }}
