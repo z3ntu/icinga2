@@ -22,6 +22,10 @@
 #include <boost/asio/ssl/context.hpp>
 #include <boost/exception/info.hpp>
 
+#ifdef _WIN32
+#	include <boost/wintls/context.hpp>
+#endif /* _WIN32 */
+
 namespace icinga
 {
 
@@ -38,7 +42,11 @@ const auto LEAF_VALID_FOR  = 60 * 60 * 24 * 397;
 const auto RENEW_THRESHOLD = 60 * 60 * 24 * 30;
 const auto RENEW_INTERVAL  = 60 * 60 * 24;
 
+#ifdef _WIN32
+typedef boost::wintls::context TlsContext;
+#else /* _WIN32 */
 typedef boost::asio::ssl::context TlsContext;
+#endif /* _WIN32 */
 
 void InitializeOpenSSL();
 
